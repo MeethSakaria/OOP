@@ -1,0 +1,104 @@
+import java.util.LinkedList;
+import java.util.List;
+
+
+class Producer implements Runnable {
+
+    private List<Integer> sharedQueue;
+    private int maxSize=4;
+    int productionSize=5;
+    int producerNo;
+    
+    public Producer(List<Integer> sharedQueue, int producerNo) {
+        this.sharedQueue = sharedQueue;
+        this.producerNo = producerNo;
+    }
+
+    @Override
+    public void run() {
+        for (int i = 1; i <= productionSize; i++) {
+            try {
+                produce(i);
+            } catch (InterruptedException e) {  e.printStackTrace(); }
+        }
+}
+
+ private void produce(int i) throws InterruptedException {
+  
+    synchronized (sharedQueue) {
+       while (sharedQueue.size() == maxSize) {
+             System.out.println(Thread.currentThread().getName()+", Queue is full, producerThread is waiting for "
+                    + "consumerThread to consume, sharedQueue's size= "+maxSize);
+             sharedQueue.wait();
+         }
+
+       int producedItem = (productionSize*producerNo)+ i;  
+       
+       System.out.println(Thread.currentThread().getName() +" Produced : " + producedItem);
+       sharedQueue.add(producedItem);
+         Thread.sleep((long)(Math.random() * 1000));
+         sharedQueue.notify();
+     }
+ }
+}
+
+class Consumer implements Runnable {
+    private List<Integer> sharedQueue;
+    public Consumer(List<Integer> sharedQueue) {
+        this.sharedQueue = sharedQueue;
+    }
+ 
+    @Override
+    public void run() {
+        while (true) {
+            try {
+                consume();
+                Thread.sleep(100);
+            } catch (InterruptedException e) {  e.printStackTrace(); }
+        }
+}
+
+ private void consume() throws InterruptedException {
+   
+        synchronized (sharedQueue) {
+            while (sharedQueue.size() == 0) {
+            System.out.println(Thread.currentThread().getName()+", Queue is empty, consumerThread is waiting for "
+                            + "producerThread to produce, sharedQueue's size= 0");
+            sharedQueue.wait();
+            }
+
+            Thread.sleep((long)(Math.random() * 2000));
+            System.out.println(Thread.currentThread().getName()+", CONSUMED : "+ sharedQueue.remove(0));
+            sharedQueue.notify();
+        }
+    }
+ 
+}
+
+public class program_1 {
+
+ public static void main(String args[]) {
+        List<Integer> sharedQueue = new LinkedList<Integer>();
+        
+        Producer producer0=new Producer(sharedQueue, 0);
+        Consumer consumer0=new Consumer(sharedQueue);
+        Thread producerThread0 = new Thread(producer0, "ProducerThread0");        
+        Thread consumerThread0 = new Thread(consumer0, "ConsumerThread0");
+        producerThread0.start();
+        consumerThread0.start();
+            
+        Producer producer1=new Producer(sharedQueue, 1);
+        Consumer consumer1=new Consumer(sharedQueue);
+        Thread producerThread1 = new Thread(producer1, "ProducerThread1");
+        Thread consumerThread1 = new Thread(consumer1, "ConsumerThread1");
+        producerThread1.start();
+        consumerThread1.start();
+        
+        Producer producer2=new Producer(sharedQueue, 2);
+        Consumer consumer2=new Consumer(sharedQueue);
+        Thread producerThread2 = new Thread(producer2, "ProducerThread2");
+        Thread consumerThread2 = new Thread(consumer2, "ConsumerThread2");
+        producerThread2.start();
+        consumerThread2.start();
+    }
+}
